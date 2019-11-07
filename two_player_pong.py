@@ -37,11 +37,11 @@ class Ball:
             self.hit_sides = True
             self.hit_rightside = True
         # Hit Paddle 1
-        if pos[0]>w/2-250 and self.hit_paddle1(pos,paddle1) == True:
+        if pos[0]>w/2-250 and self.hit_paddle1(pos,self.paddle1) == True:
             self.xspeed = -(w/32)
             self.yspeed = random.randint(-1,2) * (h/24) #bounce off at random angle
         # Hit Paddle 2
-        if pos[0]<w/2+250 and self.hit_paddle2(pos,paddle2) == True:
+        if pos[0]<w/2+250 and self.hit_paddle2(pos,self.paddle2) == True:
                 self.xspeed = (w/32)
                 self.yspeed = random.randint(-1,2) * (h/24) #bounce off at random angle
 
@@ -109,59 +109,71 @@ class Paddle:
         self.yspeed = 0
 
 
+class Game:
+    def __init__(self):
+        self.score = 0
+        self.score2 = 0 
 
-score=0
-score2=0
-while(True):
-    tk = Tk()
-    tk.title("My pong game")
-    h=480
-    w=640
+    def playGame(self):
+        while(True):
+            tk = Tk()
+            tk.title("My pong game")
 
-    canvas = Canvas(tk, width=w, height=h, bg='black')
-    canvas.pack()
-    tk.update()
-    paddle1 = Paddle(canvas, 'White', w-15, 1)
-    paddle2= Paddle(canvas, 'White', 5, 2)
-    ball = Ball(canvas, 'white', 25, paddle1, paddle2)
-    # canvas.create_line(w/2+2,0,w/2+2,h,fill="white",width=4, dash=(2, 4))
+            canvas = Canvas(tk, width=w, height=h, bg='black')
+            canvas.pack()
+            tk.update()
+            paddle1 = Paddle(canvas, 'White', w-15, 1)
+            paddle2= Paddle(canvas, 'White', 5, 2)
+            ball = Ball(canvas, 'white', 25, paddle1, paddle2)
+            # canvas.create_line(w/2+2,0,w/2+2,h,fill="white",width=4, dash=(2, 4))
 
-    # label = canvas.create_text(w/2-50, 5, anchor=NW, text=score,fill="white", font=("Ani",50))
-    # label = canvas.create_text(w/2+15, 5, anchor=NW, text=score2,fill="white",font=("Ani",50))
-    while ball.hit_sides == False:
-        ball.draw()
-        paddle1.draw()
-        paddle2.draw()
-        tk.update_idletasks()
-        tk.update()
-        time.sleep(0.01)
-        if ball.hit_leftside==True:
-            score=score+1
-            ball.hit_sides == False
-            ball.hit_leftside==False
-        elif ball.hit_rightside==True:
-            score2=score2+1
-            ball.hit_sides == False
-            ball.hit_rightside==False
+            # label = canvas.create_text(w/2-50, 5, anchor=NW, text=score,fill="white", font=("Ani",50))
+            # label = canvas.create_text(w/2+15, 5, anchor=NW, text=score2,fill="white",font=("Ani",50))
+            while ball.hit_sides == False:
+                ball.draw()
+                paddle1.draw()
+                paddle2.draw()
+                tk.update_idletasks()
+                tk.update()
+                time.sleep(0.01)
+                if ball.hit_leftside==True:
+                    self.score += 1
+                    ball.hit_sides == False
+                    ball.hit_leftside==False
+                elif ball.hit_rightside==True:
+                    self.score2 += 1
+                    ball.hit_sides == False
+                    ball.hit_rightside==False
+                
+        # Game Over
+            if score==1:
+                go_labwel = canvas.create_text(w/2,h/2,text="P1 WON",font=("Cantarell Ultra-Bold",40), fill="White")
+                ball.hit_sides == True
+                tk.update()
+                time.sleep(2)
+                tk.destroy
+                break
+            elif score2==1:
+                go_label = canvas.create_text(w/2,h/2,text="P2 WON",font=("Cantarell Ultra-Bold",40), fill="White")
+                tk.update()
+                time.sleep(2)
+                tk.destroy
+                break
+            else:
+                go_label = canvas.create_text(w/2,h/2,text="GAME OVER",font=("Cantarell Ultra-Bold",40), fill="White")
+                tk.update()
+                time.sleep(2)
+                ball.hit_sides=False;
+                tk.destroy()
 
-            
-# Game Over
-    if score==1:
-        go_labwel = canvas.create_text(w/2,h/2,text="P1 WON",font=("Cantarell Ultra-Bold",40), fill="White")
-        ball.hit_sides == True
-        tk.update()
-        time.sleep(2)
-        tk.destroy
-        break
-    elif score2==1:
-        go_label = canvas.create_text(w/2,h/2,text="P2 WON",font=("Cantarell Ultra-Bold",40), fill="White")
-        tk.update()
-        time.sleep(2)
-        tk.destroy
-        break
-    else:
-        go_label = canvas.create_text(w/2,h/2,text="GAME OVER",font=("Cantarell Ultra-Bold",40), fill="White")
-        tk.update()
-        time.sleep(2)
-        ball.hit_sides=False;
-        tk.destroy()
+    # def getCurrentState():
+
+
+def main():
+    game = Game()
+    game.playGame()
+
+
+h=480
+w=640
+main()
