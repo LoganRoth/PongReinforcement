@@ -1,1 +1,4 @@
-from . import play_pong
+from two_player_pong import main
+
+
+main()
