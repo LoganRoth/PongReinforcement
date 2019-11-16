@@ -2,6 +2,7 @@ import sys
 import random
 import argparse
 from time import sleep
+import tkinter as tk
 
 
 class Ball:
@@ -27,6 +28,7 @@ class Paddle:
 
 class Grid:
     def __init__(self, width, height):
+        self.tiles = [[None for _ in range(height)] for _ in range(width)]
         self.result = {'Point Awarded': False, 'Scorer': None}
         self.width = width
         self.height = height
@@ -52,14 +54,17 @@ class Grid:
         self.p1_paddle = Paddle(p1_paddle_pos)
         self.p2_paddle = Paddle(p2_paddle_pos)
 
-    def print(self):
-        print('{}{:>37}'.format('Player 1', 'Player 2'))
-        for row in range(self.height):
-            x = []
-            for item in range(self.width):
-                x.append(self.field[item][row])
-            print(x)
-        print('\n')
+    def print(self, c):
+        col_width = c.winfo_width()/self.width
+        row_height = c.winfo_height()/self.height
+        for i in range(self.width):
+            for j in range(self.height):
+                c.delete(self.tiles[i][j])
+                self.tiles[i][j] = None
+                if self.field[i][j] == 1:  # Paddle
+                    self.tiles[i][j] = c.create_rectangle(i*col_width, j*row_height, (i+1)*col_width, (j+1)*row_height, fill="white")
+                elif self.field[i][j] == 2:
+                    self.tiles[i][j] = c.create_oval(i*col_width, j*row_height, (i+1)*col_width, (j+1)*row_height, fill="white")
 
     def is_paddle_move_valid(self, action, paddle):
         # NOTE: 0 is at the TOP of the printed grid
@@ -127,18 +132,24 @@ class Game:
     def __init__(self, width, height, agent1, agent2):
         self.grid = Grid(width, height)
         self.players = [agent1, agent2]
+        self.root = tk.Tk()
+        self.c = tk.Canvas(self.root, width=width*100, height=height*100, borderwidth=5, background='black')
+        self.c.pack()
+        self.root.update()
 
     def playGame(self):
         game_over = False
         winner = -1
         if self.players[0].watch or self.players[1].watch:
-            self.grid.print()
+            self.grid.print(self.c)
+            self.root.update()
         while not game_over:
             game_over, winner = self.game_step()
             if self.players[0].watch or self.players[1].watch:
-                self.grid.print()
+                self.grid.print(self.c)
+                self.root.update()
                 if not self.players[0].alive and not self.players[1].alive:
-                    sleep(1)  # Only need to sleep if both are AI
+                    sleep(0.4)  # Only need to sleep if both are AI
         if self.players[0].watch or self.players[1].watch:
             print('-------------------------------{} won!-------------------'
                   '------------\n'.format(self.players[winner].name))
@@ -207,19 +218,19 @@ def parse_args():
     parser.add_argument(
         '--p1',
         action='store',
-        default='Human',
+        default='AI',
         help='Set if p1 should be an AI or a Human',
     )
     parser.add_argument(
         '--p2',
         action='store',
-        default='Human',
+        default='AI',
         help='Set if p2 should be an AI or a Human',
     )
     parser.add_argument(
         '--watch', '-w',
         action='store_true',
-        default=False,
+        default=True,
         help='If both players are AI, set if you would like to watch them '
              'play.',
     )
