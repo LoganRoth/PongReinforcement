@@ -1,218 +1,87 @@
 import sys
-import random
 import argparse
 from time import sleep
 import tkinter as tk
 
-
-class Ball:
-    def __init__(self, x_pos, y_pos):
-        self.x_pos = x_pos
-        self.y_pos = y_pos
-        self.x_vel = -1 if random.randint(0, 1) == 0 else 1
-        self.y_vel = random.randint(-1, 1)
-
-
-class Paddle:
-    def __init__(self, position: list):
-        self.position = position
-        self.top = min(position)
-        self.bottom = max(position)
-        self.length = len(position)
-
-    def update_position(self, position: list):
-        self.position = position
-        self.top = min(position)
-        self.bottom = max(position)
-
-
-class Grid:
-    def __init__(self, width, height):
-        self.tiles = [[None for _ in range(height)] for _ in range(width)]
-        self.result = {'Point Awarded': False, 'Scorer': None}
-        self.width = width
-        self.height = height
-        self.field = []
-        for i in range(width):
-            one_row = []
-            for j in range(height):
-                one_row.append(0)
-            self.field.append(one_row)
-        ball_x = int(width/2)
-        ball_y = int(height/2)
-        self.field[ball_x][ball_y] = 2  # place the ball
-        p1_paddle_pos = []
-        p2_paddle_pos = []
-        paddle_len = int(height/5)
-        for i in range(paddle_len):
-            self.field[0][i + (2 * paddle_len)] = 1  # place p1 paddle
-            self.field[width-1][i + (2 * paddle_len)] = 1  # place p2 paddle
-            p1_paddle_pos.append(i + (2 * paddle_len))
-            p2_paddle_pos.append(i + (2 * paddle_len))
-
-        self.ball = Ball(ball_x, ball_y)
-        self.p1_paddle = Paddle(p1_paddle_pos)
-        self.p2_paddle = Paddle(p2_paddle_pos)
-
-    def print(self, c):
-        col_width = c.winfo_width()/self.width
-        row_height = c.winfo_height()/self.height
-        for i in range(self.width):
-            for j in range(self.height):
-                c.delete(self.tiles[i][j])
-                self.tiles[i][j] = None
-                if self.field[i][j] == 1:  # Paddle
-                    self.tiles[i][j] = c.create_rectangle(i*col_width, j*row_height, (i+1)*col_width, (j+1)*row_height, fill="white")
-                elif self.field[i][j] == 2:
-                    self.tiles[i][j] = c.create_oval(i*col_width, j*row_height, (i+1)*col_width, (j+1)*row_height, fill="white")
-
-    def is_paddle_move_valid(self, action, paddle):
-        # NOTE: 0 is at the TOP of the printed grid
-        valid = True
-        if paddle.bottom + (action * paddle.length) >= self.height:
-            valid = False
-        if paddle.top + (action * paddle.length) < 0:
-            valid = False
-        return valid
-
-    def move(self, p1_action, p2_action):
-        if not self.is_paddle_move_valid(p1_action, self.p1_paddle):
-            p1_action = 0
-        if not self.is_paddle_move_valid(p2_action, self.p2_paddle):
-            p2_action = 0
-        self.move_paddles(p1_action, p2_action)
-        self.move_ball()
-
-    def move_paddles(self, p1_action, p2_action):
-        for i in range(self.height):
-            self.field[0][i] = 0
-            self.field[self.width-1][i] = 0
-        p1_pos = []
-        p2_pos = []
-        for i in range(len(self.p1_paddle.position)):
-            p1_pos.append(self.p1_paddle.position[i]
-                          + (self.p1_paddle.length * p1_action))
-            self.field[0][p1_pos[i]] = 1
-        for i in range(len(self.p2_paddle.position)):
-            p2_pos.append(self.p2_paddle.position[i]
-                          + (self.p2_paddle.length * p2_action))
-            self.field[self.width-1][p2_pos[i]] = 1
-
-        self.p1_paddle.update_position(p1_pos)
-        self.p2_paddle.update_position(p2_pos)
-
-    def move_ball(self):
-        new_ball_y = self.ball.y_vel + self.ball.y_pos
-        new_ball_x = self.ball.x_vel + self.ball.x_pos
-        if new_ball_y < 0 or new_ball_y >= self.height:  # Hit a wall
-            self.ball.y_vel = -self.ball.y_vel
-            new_ball_y = self.ball.y_vel + self.ball.y_pos
-        if new_ball_x >= self.width:  # P1 Scored
-            self.result['Point Awarded'] = True
-            self.result['Scorer'] = 0
-        elif new_ball_x < 0:  # P2 Scored
-            self.result['Point Awarded'] = True
-            self.result['Scorer'] = 1
-        elif self.field[new_ball_x][new_ball_y] == 1:  # Hit a paddle
-            self.ball.x_vel = -self.ball.x_vel
-            new_ball_x = self.ball.x_vel + self.ball.x_pos
-            self.ball.y_vel = random.randint(-1, 1)
-            new_ball_y = self.ball.y_vel + self.ball.y_pos
-        if new_ball_y < 0 or new_ball_y >= self.height:  # Hit a wall
-            self.ball.y_vel = -self.ball.y_vel
-            new_ball_y = self.ball.y_vel + self.ball.y_pos
-        self.field[self.ball.x_pos][self.ball.y_pos] = 0
-        if not self.result['Point Awarded']:
-            self.field[new_ball_x][new_ball_y] = 2
-        self.ball.x_pos = new_ball_x
-        self.ball.y_pos = new_ball_y
+from pong_player import Human, AI
+from pong_grid import Grid
 
 
 class Game:
+    """
+    Game class that controls the main game loop of pong
+    :attr width: the width of the game grid in discreet boxes
+    :attr height: the height of the game grid in discreet boxes
+    :attr agent1: the agent to use for player 1
+    :attr agent2: the agent to use for player 2
+    """
     def __init__(self, width, height, agent1, agent2):
         self.grid = Grid(width, height)
         self.players = [agent1, agent2]
         self.root = tk.Tk()
-        self.c = tk.Canvas(self.root, width=width*100, height=height*100, borderwidth=5, background='black')
+        self.c = tk.Canvas(self.root, width=width*100, height=height*100,
+                           borderwidth=5, background='black')
         self.c.pack()
         self.root.update()
 
     def playGame(self):
+        """
+        Plays a single game. A game is over after either player scores.
+        """
         game_over = False
         winner = -1
         if self.players[0].watch or self.players[1].watch:
             self.grid.print(self.c)
             self.root.update()
+        # Initialize S
+        s = self.grid.get_grid_state()
+        # Loop for each step of an episode
         while not game_over:
-            game_over, winner = self.game_step()
+            game_over, winner, s_prime = self.game_step(s)
+            # S <- S'
+            s = s_prime
             if self.players[0].watch or self.players[1].watch:
                 self.grid.print(self.c)
                 self.root.update()
                 if not self.players[0].alive and not self.players[1].alive:
                     sleep(0.4)  # Only need to sleep if both are AI
-        if self.players[0].watch or self.players[1].watch:
-            print('-------------------------------{} won!-------------------'
-                  '------------\n'.format(self.players[winner].name))
-        self.players[winner].wins += 1
+        if winner != -1:
+            if self.players[0].watch or self.players[1].watch:
+                print('-------------------------------{} won!-----------------'
+                      '---------------\n'.format(self.players[winner].name))
+            self.players[winner].wins += 1
 
-    def game_step(self):
-        p1_action = self.players[0].get_action()
-        p2_action = self.players[1].get_action()
+    def game_step(self, state):
+        """
+        Performs one step of the game. This will get the actions of both of
+        the players, and then move the paddles and ball based on those actions.
+        The given state will be used by AI players to determine their actions
+        and will be used to update their Q tables.
+        :param state: the current state of the game
+        """
+        # Choose A from S using policy derived from Q
+        p1_action = self.players[0].get_action(state)
+        p2_action = self.players[1].get_action(state)
+        # Take action A and observe R, S'
         self.grid.move(p1_action, p2_action)
-        return self.grid.result['Point Awarded'], self.grid.result['Scorer']
-
-
-class Player:
-    def __init__(self, name, alive, watch):
-        self.name = name
-        self.alive = alive
-        self.watch = watch
-        self.wins = 0
-
-    def get_action(self):
-        """
-        To be overloaded by the child class
-        """
-        pass
-
-
-class Human(Player):
-    def __init__(self, name):
-        super().__init__(name, True, True)
-
-    def get_action(self):
-        valid_action = False
-        action = 0
-        while not valid_action:
-            try:
-                action = int(input('Choose action {}\n1 = up\n2 = don\'t move'
-                                   '\n3 = down\nAction: '.format(self.name)))
-                if action > 3 or action < 1:
-                    raise ValueError
-                else:
-                    valid_action = True
-            except ValueError:
-                print('Invalid action, choose 1, 2 or 3.')
-        # NOTE: Since 0 is a the "top", action to go up is -1
-        if action == 1:  # up
-            action = -1
-        elif action == 2:  # don't move
-            action = 0
-        elif action == 3:  # down
-            action = 1
-        return action
-
-
-class AI(Player):
-    def __init__(self, name, watch=False):
-        super().__init__(name, False, watch)
-        self.qtable = []
-
-    def get_action(self):
-        return random.randint(-1, 1)
+        rewards = self.grid.get_reward()
+        p1_reward = rewards['P1 Reward']
+        p2_reward = rewards['P2 Reward']
+        s_prime = self.grid.get_grid_state()
+        # Update Q Table
+        if not self.players[0].alive:  # Only AI do this
+            self.players[0].updateQ(state, p1_action, p1_reward, s_prime)
+        if not self.players[1].alive:  # Only AI do this
+            self.players[1].updateQ(state, p2_action, p2_reward, s_prime)
+        step = (self.grid.result['Point Awarded'], self.grid.result['Scorer'],
+                s_prime)
+        return step
 
 
 def parse_args():
+    """
+    Argument parser so that a user an change some params from the command line.
+    """
     parser = argparse.ArgumentParser(usage='pong_sim.py --p1=[AI, Human] '
                                            '--p2=[AI, Human] [options]')
     parser.add_argument(
@@ -237,7 +106,7 @@ def parse_args():
     parser.add_argument(
         '--train',
         action='store',
-        default=1,
+        default=10000,
         help='Set the number of games to play to train the comupter.'
     )
     args = parser.parse_args()
@@ -245,25 +114,45 @@ def parse_args():
 
 
 def main():
+    """
+    Main program of the pong game. Alogrithm paramters are set here.
+    After a full training session by the AI players there will be a final game
+    played between the two of them that the users can watch and see the AI use
+    the final derived policies.
+    """
     p1_type, p2_type, watch, train = parse_args()
+    # Algorithm Parameters alpha, epsilon, gamma
+    alpha = 0.3
+    epsilon = 0.005
+    gamma = 0.8
+    width = 15
+    height = 10
     if p1_type == 'AI':
-        p1 = AI('Player 1', watch)
+        p1 = AI('Player 1', alpha, epsilon, gamma, width, height, watch)
     elif p1_type == 'Human':
         p1 = Human('Player 1')
     else:
         print('Invalid selection for P1')
         return
     if p2_type == 'AI':
-        p2 = AI('Player 2', watch)
+        p2 = AI('Player 2', alpha, epsilon, gamma, width, height, watch)
     elif p2_type == 'Human':
         p2 = Human('Player 2')
     else:
         print('Invalid selection for P2')
         return
+    # Loop for each episode
     for i in range(train):
-        game = Game(15, 10, p1, p2)
+        game = Game(width, height, p1, p2)
         game.playGame()
     print('P1 Wins: {}\nP2 Wins: {}'.format(p1.wins, p2.wins))
+
+    # Watch a game after they have been fully trained
+    p1.watch = True
+    p2.watch = True
+
+    game = Game(width, height, p1, p2)
+    game.playGame()
 
 
 if __name__ == "__main__":
