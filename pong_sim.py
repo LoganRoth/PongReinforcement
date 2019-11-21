@@ -69,10 +69,11 @@ class Game:
         p2_reward = rewards['P2 Reward']
         s_prime = self.grid.get_grid_state()
         # Update Q Table
-        if not self.players[0].alive:  # Only AI do this
-            self.players[0].updateQ(state, p1_action, p1_reward, s_prime)
-        if not self.players[1].alive:  # Only AI do this
-            self.players[1].updateQ(state, p2_action, p2_reward, s_prime)
+        # TODO: Uncomment the following lines
+        # if not self.players[0].alive:  # Only AI do this
+        #     self.players[0].updateQ(state, p1_action, p1_reward, s_prime)
+        # if not self.players[1].alive:  # Only AI do this
+        #     self.players[1].updateQ(state, p2_action, p2_reward, s_prime)
         step = (self.grid.result['Point Awarded'], self.grid.result['Scorer'],
                 s_prime)
         return step
@@ -106,7 +107,7 @@ def parse_args():
     parser.add_argument(
         '--train',
         action='store',
-        default=10000,
+        default=5,
         help='Set the number of games to play to train the comupter.'
     )
     args = parser.parse_args()

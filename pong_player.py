@@ -79,7 +79,7 @@ class AI(Player):
         # Determines greedy or random
         num = random.random()
 
-        if num <= self.epsilon:
+        if True: # TODO: should use this -> num <= self.epsilon:
             # Random action
             action = random.randint(-1, 1)
         else:
