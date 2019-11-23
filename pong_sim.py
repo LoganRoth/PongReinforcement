@@ -18,11 +18,13 @@ class Game:
     def __init__(self, width, height, agent1, agent2):
         self.grid = Grid(width, height)
         self.players = [agent1, agent2]
-        self.root = tk.Tk()
-        self.c = tk.Canvas(self.root, width=width*100, height=height*100,
-                           borderwidth=5, background='black')
-        self.c.pack()
-        self.root.update()
+        # Only display if watch flag is one
+        if self.players[0].watch or self.players[1].watch:
+            self.root = tk.Tk()
+            self.c = tk.Canvas(self.root, width=width*100, height=height*100,
+                               borderwidth=5, background='black')
+            self.c.pack()
+            self.root.update()
 
     def playGame(self):
         """
@@ -99,14 +101,16 @@ def parse_args():
     parser.add_argument(
         '--watch', '-w',
         action='store_true',
-        default=True,
+        # default=True, # Show gameplay
+        default=False,
         help='If both players are AI, set if you would like to watch them '
              'play.',
     )
     parser.add_argument(
         '--train',
         action='store',
-        default=10000,
+        default=1000,
+        # default=5,
         help='Set the number of games to play to train the comupter.'
     )
     args = parser.parse_args()
@@ -122,9 +126,9 @@ def main():
     """
     p1_type, p2_type, watch, train = parse_args()
     # Algorithm Parameters alpha, epsilon, gamma
-    alpha = 0.3
-    epsilon = 0.005
-    gamma = 0.8
+    alpha = 0.5
+    epsilon = 0.1
+    gamma = 0.9
     width = 15
     height = 10
     if p1_type == 'AI':
@@ -150,6 +154,8 @@ def main():
     # Watch a game after they have been fully trained
     p1.watch = True
     p2.watch = True
+    print(p1.qtable[3, 5])
+    print(p2.qtable[8, 5])
 
     game = Game(width, height, p1, p2)
     game.playGame()

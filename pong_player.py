@@ -1,7 +1,6 @@
 import random
 import numpy as np
 
-
 class Player:
     """
     Parent player class, intializes variables that both humans and AI will
@@ -67,8 +66,9 @@ class AI(Player):
         self.alpha = alpha
         self.epsilon = epsilon
         self.gamma = gamma
-        # TODO: Intialize Q
-        self.qtable = []
+        # Intialize Q
+        # Ball x, Ball y, Paddle position, 3 possible actions
+        self.qtable = np.zeros((15, 10, 5, 3))
 
     def get_action(self, state):
         """
@@ -83,9 +83,10 @@ class AI(Player):
             # Random action
             action = random.randint(-1, 1)
         else:
-            action_vals = self.qtable[state]
-            action_vals = np.array(action_vals)
-            # Choose greedy action, breaking ties randomly
+            action_vals = self.qtable[state["Ball Pos"][0],
+                state["Ball Pos"][1], state[self.name]]
+            action_vals = action_vals
+            # Choose greedy action, breaking ties randoml
             action = np.random.choice(np.flatnonzero(
                                              action_vals == action_vals.max()))
             if action == 0:  # up
@@ -105,20 +106,7 @@ class AI(Player):
         :param r: the reward for action a
         :param s2: the next state
         """
-        idx1 = self.get_state_idx(s1)
-        idx2 = self.get_state_idx(s2)
-        q_s1 = self.qtable[idx1]
-        q_s2 = self.qtable[idx2]
+        q_s1 = self.qtable[s1["Ball Pos"][0], s1["Ball Pos"][1], s1[self.name]]
+        q_s2 = self.qtable[s2["Ball Pos"][0], s2["Ball Pos"][1], s2[self.name]]
         q_s1[a] += self.alpha * (r + self.gamma * np.max(q_s2) - q_s1[a])
-        self.qtable[idx1][a] = q_s1[a]
-
-    def get_state_idx(self, state):
-        """
-        Returns the state index in the state table based on the given state.
-        :param state: the given state to determine the index of
-        """
-        # Using state information, determine the index in the Q table
-        # NOTE: This could also be done in grids "get_current_state" function
-        #       it would just need to take the information and convert that to
-        #       an index
-        pass
+        self.qtable[s1["Ball Pos"][0], s1["Ball Pos"][1], s1[self.name]][a] = q_s1[a]
