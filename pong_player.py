@@ -18,6 +18,23 @@ class Player:
         """
         pass
 
+class Random(Player):
+    """
+    Human child class of Player. Both alive and watch are not settable by
+    the Human class as they need to be set to true for a human to play.
+    """
+    def __init__(self, name, watch=False):
+        super().__init__(name, False, watch)
+
+    def get_action(self, state):
+        """
+        Randomly determine what action the paddle should take.
+        """
+        action = random.randint(-1, 1)
+        return action
+
+    def updateQ(self, x, y, z, state):
+        pass
 
 class Human(Player):
     """
@@ -78,10 +95,11 @@ class AI(Player):
         """
         # Determines greedy or random
         num = random.random()
-
+        # Explore
         if num <= self.epsilon:
             # Random action
-            action = random.randint(-1, 1)
+            move = random.randint(-1, 1)
+        # Exploit
         else:
             action_vals = self.qtable[state["Ball Pos"][0],
                 state["Ball Pos"][1], state[self.name]]
@@ -90,12 +108,12 @@ class AI(Player):
             action = np.random.choice(np.flatnonzero(
                                              action_vals == action_vals.max()))
             if action == 0:  # up
-                action = -1
+                move = -1
             elif action == 1:  # don't move
-                action = 0
+                move = 0
             elif action == 2:  # down
-                action = 1
-        return action
+                move = 1
+        return move
 
     def updateQ(self, s1, a, r, s2):
         """

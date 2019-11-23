@@ -3,7 +3,7 @@ import argparse
 from time import sleep
 import tkinter as tk
 
-from pong_player import Human, AI
+from pong_player import Human, AI, Random
 from pong_grid import Grid
 
 
@@ -66,10 +66,10 @@ class Game:
         p2_action = self.players[1].get_action(state)
         # Take action A and observe R, S'
         self.grid.move(p1_action, p2_action)
-        rewards = self.grid.get_reward()
+        s_prime = self.grid.get_grid_state()
+        rewards = self.grid.get_reward(state, s_prime)
         p1_reward = rewards['P1 Reward']
         p2_reward = rewards['P2 Reward']
-        s_prime = self.grid.get_grid_state()
         # Update Q Table
         if not self.players[0].alive:  # Only AI do this
             self.players[0].updateQ(state, p1_action, p1_reward, s_prime)
@@ -109,7 +109,7 @@ def parse_args():
     parser.add_argument(
         '--train',
         action='store',
-        default=1000,
+        default=100000,
         # default=5,
         help='Set the number of games to play to train the comupter.'
     )
@@ -128,7 +128,7 @@ def main():
     # Algorithm Parameters alpha, epsilon, gamma
     alpha = 0.5
     epsilon = 0.1
-    gamma = 0.9
+    gamma = 0.3
     width = 15
     height = 10
     if p1_type == 'AI':
@@ -139,7 +139,8 @@ def main():
         print('Invalid selection for P1')
         return
     if p2_type == 'AI':
-        p2 = AI('Player 2', alpha, epsilon, gamma, width, height, watch)
+        # p2 = AI('Player 2', alpha, epsilon, gamma, width, height, watch)
+        p2 = Random('Player 2', watch)
     elif p2_type == 'Human':
         p2 = Human('Player 2')
     else:
@@ -154,9 +155,9 @@ def main():
     # Watch a game after they have been fully trained
     p1.watch = True
     p2.watch = True
-    print(p1.qtable[3, 5])
-    print(p2.qtable[8, 5])
-
+    print(p1.qtable[1, 9])
+    # print(p2.qtable[13, 5])
+    input("Are you ready, kids?")
     game = Game(width, height, p1, p2)
     game.playGame()
 
