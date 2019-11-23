@@ -124,7 +124,13 @@ class AI(Player):
         :param r: the reward for action a
         :param s2: the next state
         """
+        if a == -1:
+            action = 0
+        elif a == 0:
+            action = 1
+        elif a == 1:
+            action = 2
         q_s1 = self.qtable[s1["Ball Pos"][0], s1["Ball Pos"][1], s1[self.name]]
         q_s2 = self.qtable[s2["Ball Pos"][0], s2["Ball Pos"][1], s2[self.name]]
-        q_s1[a] += self.alpha * (r + self.gamma * np.max(q_s2) - q_s1[a])
-        self.qtable[s1["Ball Pos"][0], s1["Ball Pos"][1], s1[self.name]][a] = q_s1[a]
+        q_s1[action] += self.alpha * (r + self.gamma * np.max(q_s2) - q_s1[action])
+        self.qtable[s1["Ball Pos"][0], s1["Ball Pos"][1], s1[self.name]][action] = q_s1[action]

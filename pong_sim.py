@@ -154,7 +154,8 @@ def main():
 
     # Watch a game after they have been fully trained
     p1.watch = True
-    p2.watch = True
+    # p2.watch = True
+    p2 = Human('Player 2')
     print(p1.qtable[1, 9])
     # print(p2.qtable[13, 5])
     input("Are you ready, kids?")
