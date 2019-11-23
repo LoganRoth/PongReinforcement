@@ -19,8 +19,6 @@ class pongStates:
         self.paddle2y = 0
         self.ballx = 0
         self.bally = 0
-        # Cesur and Alex create state space here
-        self.states = []
 
 
     # Moves paddle1x, paddle1y, paddle2x, paddle2y, ballx and bally
@@ -73,9 +71,10 @@ class QLearning:
         self.alpha = alpha
         self.epsilon = epsilon
 
-        # This will need to be an x by 3 array
+        # This will need to be an x by y by 3 array
         # x being the number of states
-        self.qTable = [[]]
+        # self.qTable = [[]]
+        self.qTable = numpy.zeros((13, 10, 3))
 
     # Called to the the QLearning algorithm
     def runAlgorithm(self):
@@ -127,4 +126,3 @@ def main():
     agent.runAlgorithm()
 
 main()
-

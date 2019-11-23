@@ -1,7 +1,6 @@
 import random
 import numpy as np
 
-
 class Player:
     """
     Parent player class, intializes variables that both humans and AI will
@@ -19,6 +18,23 @@ class Player:
         """
         pass
 
+class Random(Player):
+    """
+    Human child class of Player. Both alive and watch are not settable by
+    the Human class as they need to be set to true for a human to play.
+    """
+    def __init__(self, name, watch=False):
+        super().__init__(name, False, watch)
+
+    def get_action(self, state):
+        """
+        Randomly determine what action the paddle should take.
+        """
+        action = random.randint(-1, 1)
+        return action
+
+    def updateQ(self, x, y, z, state):
+        pass
 
 class Human(Player):
     """
@@ -67,8 +83,9 @@ class AI(Player):
         self.alpha = alpha
         self.epsilon = epsilon
         self.gamma = gamma
-        # TODO: Intialize Q
-        self.qtable = []
+        # Intialize Q
+        # Ball x, Ball y, Paddle position, 3 possible actions
+        self.qtable = np.zeros((15, 10, 5, 3))
 
     def get_action(self, state):
         """
@@ -78,23 +95,25 @@ class AI(Player):
         """
         # Determines greedy or random
         num = random.random()
-
+        # Explore
         if num <= self.epsilon:
             # Random action
-            action = random.randint(-1, 1)
+            move = random.randint(-1, 1)
+        # Exploit
         else:
-            action_vals = self.qtable[state]
-            action_vals = np.array(action_vals)
-            # Choose greedy action, breaking ties randomly
+            action_vals = self.qtable[state["Ball Pos"][0],
+                state["Ball Pos"][1], state[self.name]]
+            action_vals = action_vals
+            # Choose greedy action, breaking ties randoml
             action = np.random.choice(np.flatnonzero(
                                              action_vals == action_vals.max()))
             if action == 0:  # up
-                action = -1
+                move = -1
             elif action == 1:  # don't move
-                action = 0
+                move = 0
             elif action == 2:  # down
-                action = 1
-        return action
+                move = 1
+        return move
 
     def updateQ(self, s1, a, r, s2):
         """
@@ -105,20 +124,13 @@ class AI(Player):
         :param r: the reward for action a
         :param s2: the next state
         """
-        idx1 = self.get_state_idx(s1)
-        idx2 = self.get_state_idx(s2)
-        q_s1 = self.qtable[idx1]
-        q_s2 = self.qtable[idx2]
-        q_s1[a] += self.alpha * (r + self.gamma * np.max(q_s2) - q_s1[a])
-        self.qtable[idx1][a] = q_s1[a]
-
-    def get_state_idx(self, state):
-        """
-        Returns the state index in the state table based on the given state.
-        :param state: the given state to determine the index of
-        """
-        # Using state information, determine the index in the Q table
-        # NOTE: This could also be done in grids "get_current_state" function
-        #       it would just need to take the information and convert that to
-        #       an index
-        pass
+        if a == -1:
+            action = 0
+        elif a == 0:
+            action = 1
+        elif a == 1:
+            action = 2
+        q_s1 = self.qtable[s1["Ball Pos"][0], s1["Ball Pos"][1], s1[self.name]]
+        q_s2 = self.qtable[s2["Ball Pos"][0], s2["Ball Pos"][1], s2[self.name]]
+        q_s1[action] += self.alpha * (r + self.gamma * np.max(q_s2) - q_s1[action])
+        self.qtable[s1["Ball Pos"][0], s1["Ball Pos"][1], s1[self.name]][action] = q_s1[action]

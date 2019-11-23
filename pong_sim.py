@@ -3,7 +3,7 @@ import argparse
 from time import sleep
 import tkinter as tk
 
-from pong_player import Human, AI
+from pong_player import Human, AI, Random
 from pong_grid import Grid
 
 
@@ -18,11 +18,13 @@ class Game:
     def __init__(self, width, height, agent1, agent2):
         self.grid = Grid(width, height)
         self.players = [agent1, agent2]
-        self.root = tk.Tk()
-        self.c = tk.Canvas(self.root, width=width*100, height=height*100,
-                           borderwidth=5, background='black')
-        self.c.pack()
-        self.root.update()
+        # Only display if watch flag is one
+        if self.players[0].watch or self.players[1].watch:
+            self.root = tk.Tk()
+            self.c = tk.Canvas(self.root, width=width*100, height=height*100,
+                               borderwidth=5, background='black')
+            self.c.pack()
+            self.root.update()
 
     def playGame(self):
         """
@@ -64,10 +66,10 @@ class Game:
         p2_action = self.players[1].get_action(state)
         # Take action A and observe R, S'
         self.grid.move(p1_action, p2_action)
-        rewards = self.grid.get_reward()
+        s_prime = self.grid.get_grid_state()
+        rewards = self.grid.get_reward(state, s_prime)
         p1_reward = rewards['P1 Reward']
         p2_reward = rewards['P2 Reward']
-        s_prime = self.grid.get_grid_state()
         # Update Q Table
         if not self.players[0].alive:  # Only AI do this
             self.players[0].updateQ(state, p1_action, p1_reward, s_prime)
@@ -99,14 +101,16 @@ def parse_args():
     parser.add_argument(
         '--watch', '-w',
         action='store_true',
-        default=True,
+        # default=True, # Show gameplay
+        default=False,
         help='If both players are AI, set if you would like to watch them '
              'play.',
     )
     parser.add_argument(
         '--train',
         action='store',
-        default=10000,
+        default=100000,
+        # default=5,
         help='Set the number of games to play to train the comupter.'
     )
     args = parser.parse_args()
@@ -122,9 +126,9 @@ def main():
     """
     p1_type, p2_type, watch, train = parse_args()
     # Algorithm Parameters alpha, epsilon, gamma
-    alpha = 0.3
-    epsilon = 0.005
-    gamma = 0.8
+    alpha = 0.5
+    epsilon = 0.1
+    gamma = 0.3
     width = 15
     height = 10
     if p1_type == 'AI':
@@ -136,6 +140,7 @@ def main():
         return
     if p2_type == 'AI':
         p2 = AI('Player 2', alpha, epsilon, gamma, width, height, watch)
+        # p2 = Random('Player 2', watch)
     elif p2_type == 'Human':
         p2 = Human('Player 2')
     else:
@@ -148,11 +153,17 @@ def main():
     print('P1 Wins: {}\nP2 Wins: {}'.format(p1.wins, p2.wins))
 
     # Watch a game after they have been fully trained
+    p1.epsilon = -1
+    p2.epsilon = -1
     p1.watch = True
     p2.watch = True
-
-    game = Game(width, height, p1, p2)
-    game.playGame()
+    # p2 = Human('Player 2')
+    print(p1.qtable[1, 9])
+    # print(p2.qtable[13, 5])
+    input("Are you ready, kids?")
+    for _ in range(3):
+        game = Game(width, height, p1, p2)
+        game.playGame()
 
 
 if __name__ == "__main__":
