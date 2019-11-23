@@ -139,8 +139,8 @@ def main():
         print('Invalid selection for P1')
         return
     if p2_type == 'AI':
-        # p2 = AI('Player 2', alpha, epsilon, gamma, width, height, watch)
-        p2 = Random('Player 2', watch)
+        p2 = AI('Player 2', alpha, epsilon, gamma, width, height, watch)
+        # p2 = Random('Player 2', watch)
     elif p2_type == 'Human':
         p2 = Human('Player 2')
     else:
@@ -153,14 +153,17 @@ def main():
     print('P1 Wins: {}\nP2 Wins: {}'.format(p1.wins, p2.wins))
 
     # Watch a game after they have been fully trained
+    p1.epsilon = -1
+    p2.epsilon = -1
     p1.watch = True
-    # p2.watch = True
-    p2 = Human('Player 2')
+    p2.watch = True
+    # p2 = Human('Player 2')
     print(p1.qtable[1, 9])
     # print(p2.qtable[13, 5])
     input("Are you ready, kids?")
-    game = Game(width, height, p1, p2)
-    game.playGame()
+    for _ in range(3):
+        game = Game(width, height, p1, p2)
+        game.playGame()
 
 
 if __name__ == "__main__":
