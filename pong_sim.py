@@ -2,6 +2,8 @@ import sys
 import argparse
 from time import sleep
 import tkinter as tk
+import matplotlib.pyplot as plt
+import numpy as np
 
 from pong_player import Human, AI, Random
 from pong_grid import Grid
@@ -52,6 +54,7 @@ class Game:
                 print('-------------------------------{} won!-----------------'
                       '---------------\n'.format(self.players[winner].name))
             self.players[winner].wins += 1
+        return winner
 
     def game_step(self, state):
         """
@@ -148,6 +151,8 @@ def play_mode(p1_type, p2_type, watch, train):
     else:
         print('Invalid selection for P2')
         return
+
+    #Create an AI which will use a random strategy
     rando = Random('Player 2', watch)
     # Loop for each episode
     for i in range(train):
@@ -156,10 +161,17 @@ def play_mode(p1_type, p2_type, watch, train):
     print('P1 Wins: {}\nRando Wins: {}'.format(p1.wins, rando.wins))
     rando.name = 'Player 1'
     rando.wins = 0
+
+    player_wins = np.zeros(train//1000)
+    player2counter = 0
+
     # Loop for each episode
     for i in range(train):
-        game = Game(width, height, rando, p2)
-        game.playGame()
+        game = Game(width, height, rando, p2) #Train player 2
+        if i % 1000 == 0:
+            player_wins[i // 1000] = player2counter + game.playGame()
+        else:
+            player2counter += game.playGame()
     print('P2 Wins: {}\nRando Wins: {}'.format(p2.wins, rando.wins))
 
     # Watch a game after they have been fully trained
@@ -172,6 +184,10 @@ def play_mode(p1_type, p2_type, watch, train):
         game = Game(width, height, p1, p2)
         game.playGame()
 
+    plt.scatter(np.arange(train//1000), player_wins)
+    plt.ylabel("# of Wins")
+    plt.xlabel("Episode (1000s)")
+    plt.show()
 
 def tune_mode(watch, train):
     # Algorithm Parameters alpha, epsilon, gamma
