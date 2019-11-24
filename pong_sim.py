@@ -46,7 +46,7 @@ class Game:
                 self.grid.print(self.c)
                 self.root.update()
                 if not self.players[0].alive and not self.players[1].alive:
-                    sleep(0.4)  # Only need to sleep if both are AI
+                    sleep(0.2)  # Only need to sleep if both are AI
         if winner != -1:
             if self.players[0].watch or self.players[1].watch:
                 print('-------------------------------{} won!-----------------'
@@ -113,8 +113,97 @@ def parse_args():
         # default=5,
         help='Set the number of games to play to train the comupter.'
     )
+    parser.add_argument(
+        '--tune',
+        action='store_true',
+        default=False,
+        help='Set to put it into tuning mode for the algorithm parameters'
+    )
     args = parser.parse_args()
-    return args.p1, args.p2, args.watch, int(args.train)
+    return args.p1, args.p2, args.watch, int(args.train), args.tune
+
+
+def play_mode(p1_type, p2_type, watch, train):
+    # Algorithm Parameters alpha, epsilon, gamma
+    alpha1 = 0.5
+    epsilon1 = 0.01
+    gamma1 = 0.8
+    alpha2 = 0.5
+    epsilon2 = 0.1
+    gamma2 = 0.8
+    width = 15
+    height = 10
+    if p1_type == 'AI':
+        p1 = AI('Player 1', alpha1, epsilon1, gamma1, width, height, watch)
+    elif p1_type == 'Human':
+        p1 = Human('Player 1')
+    else:
+        print('Invalid selection for P1')
+        return
+    if p2_type == 'AI':
+        p2 = AI('Player 2', alpha2, epsilon2, gamma2, width, height, watch)
+        # p2 = Random('Player 2', watch)
+    elif p2_type == 'Human':
+        p2 = Human('Player 2')
+    else:
+        print('Invalid selection for P2')
+        return
+    rando = Random('Player 2', watch)
+    # Loop for each episode
+    for i in range(train):
+        game = Game(width, height, p1, rando)
+        game.playGame()
+    print('P1 Wins: {}\nRando Wins: {}'.format(p1.wins, rando.wins))
+    rando.name = 'Player 1'
+    rando.wins = 0
+    # Loop for each episode
+    for i in range(train):
+        game = Game(width, height, rando, p2)
+        game.playGame()
+    print('P2 Wins: {}\nRando Wins: {}'.format(p2.wins, rando.wins))
+
+    # Watch a game after they have been fully trained
+    p1.epsilon = -1
+    p2.epsilon = -1
+    p1.watch = True
+    p2.watch = True
+    input("Are you ready, kids?")
+    for _ in range(5):
+        game = Game(width, height, p1, p2)
+        game.playGame()
+
+
+def tune_mode(watch, train):
+    # Algorithm Parameters alpha, epsilon, gamma
+    alphas = [0.2, 0.7, 0.725, 0.75, 0.775, 0.8]
+    epsilons = [0.01]
+    gammas = [0.2, 0.6, 0.7, 0.8]
+    width = 15
+    height = 10
+    most_wins = 0
+    best_alpha = None
+    best_epsilon = None
+    best_gamma = None
+    rando = Random('Player 2', watch)
+    for alpha in alphas:
+        for epsilon in epsilons:
+            for gamma in gammas:
+                p1 = AI('Player 1', alpha, epsilon, gamma, width, height,
+                        watch)
+                # Loop for each episode
+                for i in range(train):
+                    game = Game(width, height, p1, rando)
+                    game.playGame()
+                if p1.wins > most_wins:
+                    most_wins = p1.wins
+                    best_alpha = alpha
+                    best_epsilon = epsilon
+                    best_gamma = gamma
+
+    print('Most wins ({}) with params:\nα={}\nε={}\nγ={}'.format(most_wins,
+                                                                 best_alpha,
+                                                                 best_epsilon,
+                                                                 best_gamma))
 
 
 def main():
@@ -124,46 +213,11 @@ def main():
     played between the two of them that the users can watch and see the AI use
     the final derived policies.
     """
-    p1_type, p2_type, watch, train = parse_args()
-    # Algorithm Parameters alpha, epsilon, gamma
-    alpha = 0.5
-    epsilon = 0.1
-    gamma = 0.3
-    width = 15
-    height = 10
-    if p1_type == 'AI':
-        p1 = AI('Player 1', alpha, epsilon, gamma, width, height, watch)
-    elif p1_type == 'Human':
-        p1 = Human('Player 1')
+    p1_type, p2_type, watch, train, tune = parse_args()
+    if tune:
+        tune_mode(watch, train)
     else:
-        print('Invalid selection for P1')
-        return
-    if p2_type == 'AI':
-        p2 = AI('Player 2', alpha, epsilon, gamma, width, height, watch)
-        # p2 = Random('Player 2', watch)
-    elif p2_type == 'Human':
-        p2 = Human('Player 2')
-    else:
-        print('Invalid selection for P2')
-        return
-    # Loop for each episode
-    for i in range(train):
-        game = Game(width, height, p1, p2)
-        game.playGame()
-    print('P1 Wins: {}\nP2 Wins: {}'.format(p1.wins, p2.wins))
-
-    # Watch a game after they have been fully trained
-    p1.epsilon = -1
-    p2.epsilon = -1
-    p1.watch = True
-    p2.watch = True
-    # p2 = Human('Player 2')
-    print(p1.qtable[1, 9])
-    # print(p2.qtable[13, 5])
-    input("Are you ready, kids?")
-    for _ in range(3):
-        game = Game(width, height, p1, p2)
-        game.playGame()
+        play_mode(p1_type, p2_type, watch, train)
 
 
 if __name__ == "__main__":

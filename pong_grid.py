@@ -1,6 +1,7 @@
 import random
 from pong_tools import Ball, Paddle
 
+
 class Grid:
     """
     Grid to simulate the pong game. Initializes the ball and paddle positions,
@@ -167,8 +168,8 @@ class Grid:
         """
         # Award negative points to losing player
         if self.result['Point Awarded']:
-            p1_reward = -100 if self.result['Scorer'] == 1 else 0
-            p2_reward = -100 if self.result['Scorer'] == 0 else 0
+            p1_reward = -1 if self.result['Scorer'] == 1 else 0
+            p2_reward = -1 if self.result['Scorer'] == 0 else 0
             return {'P1 Reward': p1_reward, 'P2 Reward': p2_reward}
         # Award points to players if they bounce
         # elif ((state["Ball Pos"][0] == 1) and (s_prime["Ball Pos"][0] == 2)):
