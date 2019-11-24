@@ -1,83 +1,9 @@
 import sys
 import argparse
-from time import sleep
-import tkinter as tk
+import numpy as np
 
 from pong_player import Human, AI, Random
-from pong_grid import Grid
-
-
-class Game:
-    """
-    Game class that controls the main game loop of pong
-    :attr width: the width of the game grid in discreet boxes
-    :attr height: the height of the game grid in discreet boxes
-    :attr agent1: the agent to use for player 1
-    :attr agent2: the agent to use for player 2
-    """
-    def __init__(self, width, height, agent1, agent2):
-        self.grid = Grid(width, height)
-        self.players = [agent1, agent2]
-        # Only display if watch flag is one
-        if self.players[0].watch or self.players[1].watch:
-            self.root = tk.Tk()
-            self.c = tk.Canvas(self.root, width=width*100, height=height*100,
-                               borderwidth=5, background='black')
-            self.c.pack()
-            self.root.update()
-
-    def playGame(self):
-        """
-        Plays a single game. A game is over after either player scores.
-        """
-        game_over = False
-        winner = -1
-        if self.players[0].watch or self.players[1].watch:
-            self.grid.print(self.c)
-            self.root.update()
-        # Initialize S
-        s = self.grid.get_grid_state()
-        # Loop for each step of an episode
-        while not game_over:
-            game_over, winner, s_prime = self.game_step(s)
-            # S <- S'
-            s = s_prime
-            if self.players[0].watch or self.players[1].watch:
-                self.grid.print(self.c)
-                self.root.update()
-                if not self.players[0].alive and not self.players[1].alive:
-                    sleep(0.4)  # Only need to sleep if both are AI
-        if winner != -1:
-            if self.players[0].watch or self.players[1].watch:
-                print('-------------------------------{} won!-----------------'
-                      '---------------\n'.format(self.players[winner].name))
-            self.players[winner].wins += 1
-
-    def game_step(self, state):
-        """
-        Performs one step of the game. This will get the actions of both of
-        the players, and then move the paddles and ball based on those actions.
-        The given state will be used by AI players to determine their actions
-        and will be used to update their Q tables.
-        :param state: the current state of the game
-        """
-        # Choose A from S using policy derived from Q
-        p1_action = self.players[0].get_action(state)
-        p2_action = self.players[1].get_action(state)
-        # Take action A and observe R, S'
-        self.grid.move(p1_action, p2_action)
-        s_prime = self.grid.get_grid_state()
-        rewards = self.grid.get_reward(state, s_prime)
-        p1_reward = rewards['P1 Reward']
-        p2_reward = rewards['P2 Reward']
-        # Update Q Table
-        if not self.players[0].alive:  # Only AI do this
-            self.players[0].updateQ(state, p1_action, p1_reward, s_prime)
-        if not self.players[1].alive:  # Only AI do this
-            self.players[1].updateQ(state, p2_action, p2_reward, s_prime)
-        step = (self.grid.result['Point Awarded'], self.grid.result['Scorer'],
-                s_prime)
-        return step
+from pong_game import Game
 
 
 def parse_args():
@@ -113,8 +39,162 @@ def parse_args():
         # default=5,
         help='Set the number of games to play to train the comupter.'
     )
+    parser.add_argument(
+        '--mode',
+        action='store',
+        default=0,
+        help='Mode 0: Train two agents and have them play each other. '
+             'Mode 1: Tune the algorithm parameters to find the best set. '
+             'Mode 2: Train one agent and then save the Q-table to a file. '
+             'Mode 3: Two agents use saved Q-tables and play each other.'
+    )
     args = parser.parse_args()
-    return args.p1, args.p2, args.watch, int(args.train)
+    return args.p1, args.p2, args.watch, int(args.train), int(args.mode)
+
+
+def train_and_play_mode(p1_type, p2_type, watch, train, width, height):
+    # Algorithm Parameters alpha, epsilon, gamma
+    alpha1 = 0.5
+    epsilon1 = 0.01
+    gamma1 = 0.8
+    alpha2 = 0.5
+    epsilon2 = 0.1
+    gamma2 = 0.8
+    if p1_type == 'AI':
+        p1 = AI('Player 1', alpha1, epsilon1, gamma1, width, height, watch)
+    elif p1_type == 'Human':
+        p1 = Human('Player 1')
+    else:
+        print('Invalid selection for P1')
+        return
+    if p2_type == 'AI':
+        p2 = AI('Player 2', alpha2, epsilon2, gamma2, width, height, watch)
+        # p2 = Random('Player 2', watch)
+    elif p2_type == 'Human':
+        p2 = Human('Player 2')
+    else:
+        print('Invalid selection for P2')
+        return
+    rando = Random('Player 2', watch)
+    # Loop for each episode
+    for i in range(train):
+        game = Game(width, height, p1, rando)
+        game.playGame()
+    print('P1 Wins: {}\nRando Wins: {}'.format(p1.wins, rando.wins))
+    rando.name = 'Player 1'
+    rando.wins = 0
+    # Loop for each episode
+    for i in range(train):
+        game = Game(width, height, rando, p2)
+        game.playGame()
+    print('P2 Wins: {}\nRando Wins: {}'.format(p2.wins, rando.wins))
+
+    # Watch a game after they have been fully trained
+    p1.epsilon = -1
+    p2.epsilon = -1
+    p1.watch = True
+    p2.watch = True
+    input("Are you ready, kids?")
+    for _ in range(5):
+        game = Game(width, height, p1, p2)
+        game.playGame()
+
+
+def tune_mode(train, width, height):
+    # Algorithm Parameters alpha, epsilon, gamma
+    alphas = np.linspace(0.1, 1, 36, endpoint=False)
+    epsilons = np.linspace(0.005, 0.05, 10)
+    gammas = np.linspace(0.1, 1, 36, endpoint=False)
+    most_wins = 0
+    best_alpha = None
+    best_epsilon = None
+    best_gamma = None
+    rando = Random('Player 2', False)
+    for alpha in alphas:
+        for epsilon in epsilons:
+            for gamma in gammas:
+                p1 = AI('Player 1', alpha, epsilon, gamma, width, height,
+                        False)
+                # Loop for each episode
+                for i in range(train):
+                    game = Game(width, height, p1, rando)
+                    game.playGame()
+                if p1.wins > most_wins:
+                    most_wins = p1.wins
+                    best_alpha = alpha
+                    best_epsilon = epsilon
+                    best_gamma = gamma
+
+    print('Most wins ({}) with params:\nα={}\nε={}\nγ={}'.format(most_wins,
+                                                                 best_alpha,
+                                                                 best_epsilon,
+                                                                 best_gamma))
+
+
+def write_qtable(player, width, height):
+    with open('qtable.txt', 'w+') as f:
+        f.write(str(player.alpha) + '\n')
+        f.write(str(player.gamma) + '\n')
+        for x in range(width):
+            for y in range(height):
+                for idx in range(5):  # Number of paddle positions
+                    for a in range(3):  # Number of possible actions
+                        f.write(str(player.qtable[x, y, idx, a]) + '\n')
+
+
+def train_and_save_mode(train, width, height):
+    alpha = 0.55
+    epsilon = 0.01
+    gamma = 0.9
+    p1 = AI('Player 1', alpha, epsilon, gamma, width, height, False)
+    rando = Random('Player 2', False)
+    # Loop for each episode
+    for i in range(train):
+        game = Game(width, height, p1, rando)
+        game.playGame()
+    write_qtable(p1, width, height)
+
+
+def get_qtable(player, name, width, height):
+    qtable = None
+    with open('qtable.txt', 'r') as f:
+        qtable = f.readlines()
+    qtableIter = iter(qtable)
+    player.alpha = float(next(qtableIter))
+    player.gamma = float(next(qtableIter))
+    for x in range(width):
+        for y in range(height):
+            for idx in range(5):  # Number of paddle positions
+                for a in range(3):  # Number of possible actions
+                    if name == 'Player 1':
+                        player.qtable[x, y, idx, a] = float(next(qtableIter))
+                    else:
+                        x_flip = 14 - x  # Flip the table for Player 2
+                        player.qtable[x_flip, y, idx, a] =\
+                            float(next(qtableIter))
+
+
+def play_mode(p1_type, p2_type, width, height):
+    if p1_type == 'AI':
+        p1 = AI('Player 1', 0, -1, 0, width, height, True)
+    elif p1_type == 'Human':
+        p1 = Human('Player 1')
+    else:
+        print('Invalid selection for P1')
+        return
+    if p2_type == 'AI':
+        p2 = AI('Player 2', 0, -1, 0, width, height, True)
+    elif p2_type == 'Human':
+        p2 = Human('Player 2')
+    else:
+        print('Invalid selection for P2')
+        return
+    get_qtable(p1, 'Player 1', width, height)
+    get_qtable(p2, 'Player 2', width, height)
+    input("Are you ready, kids?")
+    for _ in range(5):
+        game = Game(width, height, p1, p2)
+        game.playGame()
 
 
 def main():
@@ -124,46 +204,17 @@ def main():
     played between the two of them that the users can watch and see the AI use
     the final derived policies.
     """
-    p1_type, p2_type, watch, train = parse_args()
-    # Algorithm Parameters alpha, epsilon, gamma
-    alpha = 0.5
-    epsilon = 0.1
-    gamma = 0.3
-    width = 15
-    height = 10
-    if p1_type == 'AI':
-        p1 = AI('Player 1', alpha, epsilon, gamma, width, height, watch)
-    elif p1_type == 'Human':
-        p1 = Human('Player 1')
-    else:
-        print('Invalid selection for P1')
-        return
-    if p2_type == 'AI':
-        p2 = AI('Player 2', alpha, epsilon, gamma, width, height, watch)
-        # p2 = Random('Player 2', watch)
-    elif p2_type == 'Human':
-        p2 = Human('Player 2')
-    else:
-        print('Invalid selection for P2')
-        return
-    # Loop for each episode
-    for i in range(train):
-        game = Game(width, height, p1, p2)
-        game.playGame()
-    print('P1 Wins: {}\nP2 Wins: {}'.format(p1.wins, p2.wins))
-
-    # Watch a game after they have been fully trained
-    p1.epsilon = -1
-    p2.epsilon = -1
-    p1.watch = True
-    p2.watch = True
-    # p2 = Human('Player 2')
-    print(p1.qtable[1, 9])
-    # print(p2.qtable[13, 5])
-    input("Are you ready, kids?")
-    for _ in range(3):
-        game = Game(width, height, p1, p2)
-        game.playGame()
+    width = 19
+    height = 15
+    p1_type, p2_type, watch, train, mode = parse_args()
+    if mode == 0:
+        train_and_play_mode(p1_type, p2_type, watch, train, width, height)
+    elif mode == 1:
+        tune_mode(train, width, height)
+    elif mode == 2:
+        train_and_save_mode(train, width, height)
+    else:  # Mode == 3
+        play_mode(p1_type, p2_type, width, height)
 
 
 if __name__ == "__main__":
