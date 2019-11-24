@@ -69,9 +69,9 @@ class Grid:
         """
         # NOTE: 0 is at the TOP of the grid
         valid = True
-        if paddle.bottom + (action * paddle.length) >= self.height:
+        if paddle.bottom + action >= self.height:
             valid = False
-        if paddle.top + (action * paddle.length) < 0:
+        if paddle.top + action < 0:
             valid = False
         return valid
 
@@ -104,12 +104,12 @@ class Grid:
         self.p1_paddle.pos_idx += p1_action
         for i in range(len(self.p1_paddle.position)):
             p1_pos.append(self.p1_paddle.position[i]
-                          + (self.p1_paddle.length * p1_action))
+                          + p1_action)
             self.field[0][p1_pos[i]] = 1
         self.p2_paddle.pos_idx += p2_action
         for i in range(len(self.p2_paddle.position)):
             p2_pos.append(self.p2_paddle.position[i]
-                          + (self.p2_paddle.length * p2_action))
+                          + p2_action)
             self.field[self.width-1][p2_pos[i]] = 1
 
         self.p1_paddle.update_position(p1_pos)

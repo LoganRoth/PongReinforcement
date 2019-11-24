@@ -143,9 +143,9 @@ def write_qtable(player, width, height):
 
 
 def train_and_save_mode(train, width, height):
-    alpha = 0.7
+    alpha = 0.55
     epsilon = 0.01
-    gamma = 0.7
+    gamma = 0.9
     p1 = AI('Player 1', alpha, epsilon, gamma, width, height, False)
     rando = Random('Player 2', False)
     # Loop for each episode
@@ -204,8 +204,8 @@ def main():
     played between the two of them that the users can watch and see the AI use
     the final derived policies.
     """
-    width = 15
-    height = 10
+    width = 19
+    height = 15
     p1_type, p2_type, watch, train, mode = parse_args()
     if mode == 0:
         train_and_play_mode(p1_type, p2_type, watch, train, width, height)

@@ -43,7 +43,7 @@ class Game:
                 self.grid.print(self.c)
                 self.root.update()
                 if not self.players[0].alive and not self.players[1].alive:
-                    sleep(0.2)  # Only need to sleep if both are AI
+                    sleep(0.05)  # Only need to sleep if both are AI
         if winner != -1:
             if self.players[0].watch or self.players[1].watch:
                 print('-------------------------------{} won!-----------------'

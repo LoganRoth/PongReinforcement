@@ -88,7 +88,7 @@ class AI(Player):
         self.gamma = gamma
         # Intialize Q
         # Ball x, Ball y, Paddle position, 3 possible actions
-        self.qtable = np.zeros((15, 10, 5, 3))
+        self.qtable = np.zeros((width, height, 13, 3))
 
     def get_action(self, state):
         """
