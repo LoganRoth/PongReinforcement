@@ -2,6 +2,8 @@ import sys
 import argparse
 import numpy as np
 import matplotlib.pyplot as plot
+import time
+
 from pong_player import Human, AI, Random
 from pong_game import Game
 
@@ -102,12 +104,12 @@ def generate_timeSteps_plot(p1_type, p2_type, watch, train, width, height):
 
 def train_and_play_mode(p1_type, p2_type, watch, train, width, height):
     # Algorithm Parameters alpha, epsilon, gamma
-    alpha1 = 0.5
-    epsilon1 = 0.01
-    gamma1 = 0.8
-    alpha2 = 0.5
+    alpha1 = 0.7
+    epsilon1 = 0.1
+    gamma1 = 0.7
+    alpha2 = 0.7
     epsilon2 = 0.1
-    gamma2 = 0.8
+    gamma2 = 0.7
     if p1_type == 'AI':
         p1 = AI('Player 1', alpha1, epsilon1, gamma1, width, height, watch)
     elif p1_type == 'Human':
@@ -143,7 +145,7 @@ def train_and_play_mode(p1_type, p2_type, watch, train, width, height):
     p1.watch = True
     p2.watch = True
     input("Are you ready, kids?")
-    for _ in range(5):
+    for _ in range(1):
         game = Game(width, height, p1, p2)
         game.playGame()
 
@@ -185,15 +187,15 @@ def write_qtable(player, width, height):
         f.write(str(player.gamma) + '\n')
         for x in range(width):
             for y in range(height):
-                for idx in range(5):  # Number of paddle positions
+                for idx in range(13):  # Number of paddle positions
                     for a in range(3):  # Number of possible actions
                         f.write(str(player.qtable[x, y, idx, a]) + '\n')
 
 
 def train_and_save_mode(train, width, height):
-    alpha = 0.55
-    epsilon = 0.01
-    gamma = 0.9
+    alpha = 0.7
+    epsilon = 0.1
+    gamma = 0.7
     p1 = AI('Player 1', alpha, epsilon, gamma, width, height, False)
     rando = Random('Player 2', False)
     # Loop for each episode
@@ -212,12 +214,12 @@ def get_qtable(player, name, width, height):
     player.gamma = float(next(qtableIter))
     for x in range(width):
         for y in range(height):
-            for idx in range(5):  # Number of paddle positions
+            for idx in range(13):  # Number of paddle positions
                 for a in range(3):  # Number of possible actions
                     if name == 'Player 1':
                         player.qtable[x, y, idx, a] = float(next(qtableIter))
                     else:
-                        x_flip = 14 - x  # Flip the table for Player 2
+                        x_flip = width - 1 - x  # Flip the table for Player 2
                         player.qtable[x_flip, y, idx, a] =\
                             float(next(qtableIter))
 
@@ -240,9 +242,12 @@ def play_mode(p1_type, p2_type, width, height):
     get_qtable(p1, 'Player 1', width, height)
     get_qtable(p2, 'Player 2', width, height)
     input("Are you ready, kids?")
-    for _ in range(5):
+    for _ in range(1):
+        start_time = time.time()
         game = Game(width, height, p1, p2)
         game.playGame()
+        end_time = time.time()
+        print('One game took {} seconds'.format(end_time - start_time))
 
 
 def main():

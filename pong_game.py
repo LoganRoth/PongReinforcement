@@ -51,6 +51,8 @@ class Game:
                 print('-------------------------------{} won!-----------------'
                       '---------------\n'.format(self.players[winner].name))
             self.players[winner].wins += 1
+        self.players[0].episodes += 1
+        self.players[1].episodes += 1
 
     def game_step(self, state):
         """

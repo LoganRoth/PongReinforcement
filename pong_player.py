@@ -13,6 +13,7 @@ class Player:
         self.watch = watch
         self.wins = 0
         self.hits = 0
+        self.episodes = 0
 
     def get_action(self, state):
         """
@@ -97,10 +98,14 @@ class AI(Player):
         with an epsilon-greedy choice.
         :param state: the current state of the game
         """
+        if self.episodes > 1000:
+            epsilon = (self.epsilon * 100) / self.episodes
+        else:
+            epsilon = self.epsilon
         # Determines greedy or random
         num = random.random()
         # Explore
-        if num <= self.epsilon:
+        if num <= epsilon:
             # Random action
             move = random.randint(-1, 1)
         # Exploit
