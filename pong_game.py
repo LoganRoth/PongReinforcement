@@ -15,6 +15,7 @@ class Game:
     def __init__(self, width, height, agent1, agent2):
         self.grid = Grid(width, height)
         self.players = [agent1, agent2]
+        self.timeSteps = 0
         # Only display if watch flag is one
         if self.players[0].watch or self.players[1].watch:
             self.root = tk.Tk()
@@ -36,6 +37,7 @@ class Game:
         s = self.grid.get_grid_state()
         # Loop for each step of an episode
         while not game_over:
+            self.timeSteps += 1
             game_over, winner, s_prime = self.game_step(s)
             # S <- S'
             s = s_prime
@@ -64,6 +66,10 @@ class Game:
         # Take action A and observe R, S'
         self.grid.move(p1_action, p2_action)
         s_prime = self.grid.get_grid_state()
+        if ((state["Ball Pos"][0] == 1) and (s_prime["Ball Pos"][0] == 2)):
+            self.players[0].hits += 1
+        if ((state["Ball Pos"][0] == 13) and (s_prime["Ball Pos"][0] == 12)):
+            self.players[1].hits += 1
         rewards = self.grid.get_reward(state, s_prime)
         p1_reward = rewards['P1 Reward']
         p2_reward = rewards['P2 Reward']

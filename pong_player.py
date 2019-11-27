@@ -12,6 +12,7 @@ class Player:
         self.alive = alive
         self.watch = watch
         self.wins = 0
+        self.hits = 0
 
     def get_action(self, state):
         """

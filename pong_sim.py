@@ -1,7 +1,7 @@
 import sys
 import argparse
 import numpy as np
-
+import matplotlib.pyplot as plot
 from pong_player import Human, AI, Random
 from pong_game import Game
 
@@ -51,6 +51,54 @@ def parse_args():
     args = parser.parse_args()
     return args.p1, args.p2, args.watch, int(args.train), int(args.mode)
 
+def generate_timeSteps_plot(p1_type, p2_type, watch, train, width, height):
+    """
+    Used to generate time step and hit plots.
+    """
+    alpha1 = 0.5
+    epsilon1 = 0.01
+    gamma1 = 0.8
+    alpha2 = 0.5
+    epsilon2 = 0.1
+    gamma2 = 0.8
+    if p1_type == 'AI':
+        p1 = AI('Player 1', alpha1, epsilon1, gamma1, width, height, watch)
+    elif p1_type == 'Human':
+        p1 = Human('Player 1')
+    else:
+        print('Invalid selection for P1')
+        return
+    if p2_type == 'AI':
+        p2 = AI('Player 2', alpha2, epsilon2, gamma2, width, height, watch)
+        # p2 = Random('Player 2', watch)
+    elif p2_type == 'Human':
+        p2 = Human('Player 2')
+    else:
+        print('Invalid selection for P2')
+        return
+    rando = Random('Test 1', watch)
+    rando2 = Random('Test 2', watch)
+    gameNum = 0
+    plot.plot(gameNum, 0, 'b.')
+    plot.xlabel("Game number")
+    plot.ylabel("Time steps")
+    # Loop for each episode
+    for i in range(train):
+        gameNum += 1
+        print(gameNum)
+        game = Game(width, height, p1, rando)
+        game2 = Game(width, height, rando2, p2)
+        game.playGame()
+        game2.playGame()
+        # Play a game together and count time steps
+        testGame = Game(width, height, p1, p2)
+        testGame.playGame()
+        # Can adjust this to be p1.hits, p2.hits
+        plot.plot(gameNum, testGame.timeSteps, 'b.')
+
+    plot.show()
+
+    print('Done making the plot!')
 
 def train_and_play_mode(p1_type, p2_type, watch, train, width, height):
     # Algorithm Parameters alpha, epsilon, gamma
