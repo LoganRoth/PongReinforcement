@@ -24,8 +24,8 @@ class Player:
 
 class Random(Player):
     """
-    Human child class of Player. Both alive and watch are not settable by
-    the Human class as they need to be set to true for a human to play.
+    Random child class of Player. Nothing is settable the agent simply only
+    uses a completely random policy.
     """
     def __init__(self, name, watch=False):
         super().__init__(name, False, watch)
@@ -37,7 +37,11 @@ class Random(Player):
         action = random.randint(-1, 1)
         return action
 
-    def updateQ(self, x, y, z, state):
+    def updateQ(self, s1, a1, r, s2):
+        """
+        Blank function since the Random agent is an AI but does not have a
+        Q-table.
+        """
         pass
 
 
@@ -144,6 +148,9 @@ class AI(Player):
 
     @staticmethod
     def __convert_dir_to_index(dir):
+        """
+        Switches the direction as a -1, 0, 1 to a valid table index.
+        """
         if dir == -1:
             idx = 0
         elif dir == 0:

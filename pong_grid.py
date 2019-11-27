@@ -19,12 +19,11 @@ class Grid:
                 one_row.append(0)
             self.field.append(one_row)
         ball_x = int(width/2)
-        # ball_y = int(height/2)
         ball_y = random.randint(0, 9)
         self.field[ball_x][ball_y] = 2  # place the ball
         p1_paddle_pos = []
         p2_paddle_pos = []
-        paddle_len = int(height/5)  # 5 discreet paddle positions
+        paddle_len = int(height/5)  # 13 discreet paddle positions
         for i in range(paddle_len):
             self.field[0][i + (2 * paddle_len)] = 1  # place p1 paddle
             self.field[width-1][i + (2 * paddle_len)] = 1  # place p2 paddle
@@ -171,16 +170,5 @@ class Grid:
             p1_reward = -1 if self.result['Scorer'] == 1 else 0
             p2_reward = -1 if self.result['Scorer'] == 0 else 0
             return {'P1 Reward': p1_reward, 'P2 Reward': p2_reward}
-        # Award points to players if they bounce
-        # elif ((state["Ball Pos"][0] == 1) and (s_prime["Ball Pos"][0] == 2)):
-        #     p1_reward = 10
-        #     p2_reward = 0
-        #     # print("Player 1 bounced")
-        #     return {'P1 Reward': p1_reward, 'P2 Reward': p2_reward}
-        # elif ((state["Ball Pos"][0] == 13) and (s_prime["Ball Pos"][0] == 12)):
-        #     p1_reward = 0
-        #     p2_reward = 10
-        #     # print("Player 2 bounced")
-        #     return {'P1 Reward': p1_reward, 'P2 Reward': p2_reward}
         else:
             return {'P1 Reward': 0, 'P2 Reward': 0}
